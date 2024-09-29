@@ -1,5 +1,5 @@
 "use client";
-import { auth } from "../../../firebase/setup";
+import { auth } from "../../../setup";
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
