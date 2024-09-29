@@ -1,0 +1,30 @@
+
+
+services:
+  backend:
+    build:
+      context: ./suidhaga-server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+    volumes:
+      - ./suidhaga-server:/app
+      - /app/node_modules
+  
+  frontend:
+    build:
+      context: ./suidhaga-1
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_GRAPHQL_URL=http://backend:8080/graphql
+    volumes:
+      - ./suidhaga-1:/app
+      - /app/node_modules
+    depends_on:
+      - backend
