@@ -1,25 +1,16 @@
 "use client";
-import { auth } from "../../../setup";
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  ConfirmationResult,
-} from "firebase/auth";
-import React, { useEffect, useState } from "react";
-import OtpInput from "react-otp-input";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/material.css";
+import React, { useState } from "react";
 import { Sansita } from "@next/font/google";
-import PasswordForm from "@/components/auth/passwordForm";
 import { useMutation } from "@apollo/client";
 import { SIGN_UP } from "@/graphql/mutations/users.mutations";
-import UserDetails from "@/components/auth/userDetails";
 import toast from "react-hot-toast";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import akshay from "@/public/image/akshay.jpg";
+import TextField from "@mui/material/TextField";
+import { EyeFilled, EyeInvisibleFilled } from "@ant-design/icons";
 
 const SansitaBold = Sansita({
   subsets: ["latin"],
@@ -28,95 +19,60 @@ const SansitaBold = Sansita({
 });
 
 export default function Register() {
-  const [otp, setOtp] = useState("");
-  const [phone, setPhone] = useState("");
-  const [user, setUser] = useState<ConfirmationResult | null>(null);
-  const [status, setStatus] = useState(false);
-  const [phoneStatus, setPhoneStatus] = useState(true);
-  const [password, setPassword] = useState("");
-  const [userDetail, setUserDetail] = useState({ name: "", email: "" });
   const [signup, { loading, error }] = useMutation(SIGN_UP);
-  const [Namefocus, setNameFocus] = useState("");
-  const [Emailfocus, setEmailFocus] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const router = useRouter();
-  const [verified, setVerified] = useState<Boolean>(false);
-
-  const sendOtp = async () => {
-    try {
-      const recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptchaVerifier",
-        {}
-      );
-      const confirmation = await signInWithPhoneNumber(
-        auth,
-        phone,
-        recaptchaVerifier
-      );
-      setUser(confirmation);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  async function verifyUser() {
-    try {
-      const data = await user?.confirm(otp);
-      console.log(data);
-      setStatus(true);
-      setPhoneStatus(false);
-      // if(data){
-      //     router.push('/home');
-      // }
-      setVerified(true);
-    } catch (err) {
-      console.log(err);
-    }
-    setStatus(true);
-    setPhoneStatus(false);
-  }
 
   const formik = useFormik({
     initialValues: {
       name: "",
+      phone: "",  
       email: "",
+      password: "",
+      confirmPassword: ""
     },
-    onSubmit: async () => {
-      // console.log(formik.values);
-      if (verified) {
-        setUserDetail({
-          name: ` ${formik.values.name} `,
-          email: `${formik.values.email}`,
-        });
-        const signUpData = {
-          phone: phone,
-          password: password,
-          username: phone,
-          email: `${formik.values.email}`,
-          name: `${formik.values.name}`
-        };
-        console.log(signUpData);
+    onSubmit: async (values) => {
+      if (values.password !== values.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
 
-        try {
-          signup({
-            variables: {
-              input: signUpData,
-            },
+      const signUpData = {
+        username: values.email,
+        email: values.email,
+        name: values.name,
+        password: values.password,
+        phone: values.phone // Keep empty for now to maintain backend compatibility
+      };
+      
+      console.log(signUpData);
+
+      try {
+        signup({
+          variables: {
+            input: signUpData,
+          },
+        })
+          .then(() => {
+            toast.success(`User Created Successfully`);
+            router.push(`/auth/login`);
           })
-            .then(() => toast.success(`User Created`))
-            .then(() => router.push(`/jobs`))
-            .catch((err) => {
-              console.log(error), toast.error(err?.message);
-            });
-        } catch (err) {
-          toast.error(`error signing in`);
-          console.log(err);
-        }
+          .catch((err) => {
+            console.log(err);
+            toast.error(err?.message || "Error creating account");
+          });
+      } catch (err) {
+        toast.error(`Error signing up`);
+        console.log(err);
       }
     },
     validationSchema: yup.object({
-      name: yup.string().required("field is required"),
-      email: yup.string().email(),
+      name: yup.string().required("Name is required"),
+      email: yup.string().email("Invalid email format").required("Email is required"),
+      password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+      confirmPassword: yup.string().required("Confirm password is required"),
+      phone: yup.string().required("Phone number is required"),
     }),
   });
 
@@ -141,154 +97,128 @@ export default function Register() {
           </svg>
         </div>
       </div>
-      <div id="card" className=" w-screen h-screen">
-        <div className="flex xl:flex-row lg:flex-row sm:flex-col justify-evenly absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white sm:p-[3%] xs:max-sm:py-[8%] xs:max-sm:px-[4%]  shadow-2xl w-[70%] h-[60%]">
-          <div>
-            <div className={`${!phoneStatus && "hidden"}`}>
-              <span
-                className={`${SansitaBold.className} text-xl md:text-2xl lg:text-3xl  text-[#333333] flex xs:place-content-center sm:place-content-center md:place-content-start`}
-              >
-                Register To Your Account
-              </span>
-              <div className="mt-[4%]">
-                <PhoneInput
-                  country={"in"}
-                  value={phone}
-                  onChange={(phone) => setPhone("+" + phone)}
-                  disableDropdown
-                />
-              </div>
-              <div className="w-1/3 flex flex-col justify-center">
-                <div className="flex justify-center">
-                  <div
-                    id="send_otp_button"
-                    className="px-[5%] py-[1%] bg-[#C84869] text-white mt-[2%] rounded-md cursor-pointer"
-                    onClick={sendOtp}
-                  >
-                    {" "}
-                    Send OTP
-                  </div>
-                </div>
-              </div>
-              <div id="recaptchaVerifier" className="mt-[2%]"></div>
-              <div className="full mt-[4%]">
-                <div className="flex justify-center items-center">
-                  <label className="px-[3%]">Enter OTP :</label>
-                  <OtpInput
-                    value={otp}
-                    onChange={setOtp}
-                    numInputs={6}
-                    renderInput={(props) => <input {...props} />}
-                    renderSeparator={<span className="px-1"></span>}
-                    inputStyle={"text-lg border-2 rounded border-gray-400 "}
-                  />
-                </div>
-                <div className="">
-                  <div className="flex justify-center">
-                    <div
-                      id="send_otp_button"
-                      className="px-[10%] py-[1%] bg-[#C84869] text-white mt-[2%] rounded-md cursor-pointer"
-                      onClick={verifyUser}
-                    >
-                      Verify
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className={`${!status && "hidden"} `}>
-              <div
-                className={`${SansitaBold.className} lg:text-2xl text-md text-[#333333] md:text-xl mt-[4%] w-[100%] flex xs:max-md:place-content-center `}
-              >
-                Create Your Password
-              </div>
-              <div className="mt-[15%] w-full">
-                <PasswordForm password={setPassword} status={setStatus} />
-              </div>
-            </div>
-            <div className={`${!password && "hidden"}`}>
-              <div
-                className={`${SansitaBold.className} lg:text-2xl text-md text-[#333333] md:text-xl mt-[4%] w-[100%] flex xs:max-md:place-content-center `}
-              >
-                User Details
-              </div>
-              <div className="mt-[2%] w-full">
-                {/* ----MAKE A COMPONENT AND RENDER HERE */}
-                <div>
-                  <form
-                    className="sm:w-[100%] md:w-[55%] lg:w-full flex flex-col justify-center"
-                    onSubmit={formik.handleSubmit}
-                  >
-                    <div id="name&password" className="flex flex-col">
-                      <label
-                        htmlFor="password"
-                        className="text-[#333333] font-sans font-semibold text-lg mt-[20%]"
-                      >
-                        Name
-                      </label>
-                      <div
-                        className={`bg-gray-50 flex flex-row justify-between outline outline-1 outline-gray-400 p-[2%] rounded ${Namefocus} hover:outline-gray-900`}
-                      >
-                        <input
-                          id="name"
-                          type="text"
-                          className="bg-gray-50 focus:outline-none w-full"
-                          placeholder="name"
-                          value={formik.values.name}
-                          onChange={formik.handleChange}
-                          onFocusCapture={() =>
-                            setNameFocus("outline-gray-900")
-                          }
-                          onBlurCapture={() => setNameFocus("")}
-                        />
-                        {/* <div>{passwordVisible ? <EyeInvisibleFilled onClick={()=>setPasswordVisible(false)} className=""/> : <EyeFilled onClick={()=>setPasswordVisible(true)} className="px-[1%]"/>} </div> */}
-                      </div>
-                      {formik.errors.name && (
-                        <div className="text-danger">{formik.errors.name}</div>
-                      )}
-                    </div>
+      
+      <div id="card" className="w-screen h-screen">
+        <div className="flex xl:flex-row lg:flex-row sm:flex-col justify-evenly absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white sm:p-[3%] xs:max-sm:py-[8%] xs:max-sm:px-[4%] shadow-2xl w-[70%] h-[70%]">
+          
+          <div className="w-[45%] flex flex-col justify-center">
+            <span
+              className={`${SansitaBold.className} text-xl md:text-2xl lg:text-3xl text-[#333333] flex xs:place-content-center sm:place-content-center md:place-content-start mb-6`}
+            >
+              Create Your Account
+            </span>
+            
+            <form
+              className="flex flex-col space-y-4"
+              onSubmit={formik.handleSubmit}
+            >
+              <TextField
+                id="name"
+                label="Full Name"
+                type="text"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                name="name"
+                error={formik.touched.name && Boolean(formik.errors.name)}
+                helperText={formik.touched.name && formik.errors.name}
+                autoComplete="name"
+                fullWidth
+              />
 
-                    <div id="password" className="flex flex-col mt-[4%]">
-                      <label
-                        htmlFor="password"
-                        className="text-[#333333] font-sans font-semibold text-lg "
-                      >
-                        Email
-                      </label>
-                      <div
-                        className={` bg-gray-50 flex flex-row justify-between outline outline-1 outline-gray-400 p-[2%] rounded hover:outline-gray-900 ${Emailfocus}`}
-                      >
-                        <input
-                          id="email"
-                          type="text"
-                          className="bg-gray-50 focus:outline-none w-full"
-                          placeholder="email"
-                          value={formik.values.email}
-                          onChange={formik.handleChange}
-                          onFocus={() => setEmailFocus("outline-gray-900")}
-                          onBlurCapture={() => setEmailFocus("")}
-                        />
-                        {/* <div>{confirmPasswordVisible ? <EyeInvisibleFilled onClick={()=>setConfirmPasswordVisible(false)} className=""/> : <EyeFilled onClick={()=>setConfirmPasswordVisible(true)} className="px-[1%]"/>} </div> */}
-                      </div>
-                      {formik.errors.email && (
-                        <div className="text-danger">{formik.errors.email}</div>
-                      )}
-                    </div>
-                    <div className="flex place-content-center">
-                      <button
-                        type="submit"
-                        className="bg-[#C84869] hover:bg-[#961638] text-white mt-[8%] rounded-md hover:transition-colors duration-500 ease-in-out p-[1%] w-[70%]"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </form>
+              <TextField
+                id="email"
+                label="Email"
+                type="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                name="email"
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+                autoComplete="email"
+                fullWidth
+              />
+
+                 <TextField
+                id="phone"
+                label="Phone .no"
+                type="string"
+                value={formik.values.phone}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                name="phone"
+                error={formik.touched.phone && Boolean(formik.errors.phone)}
+                helperText={formik.touched.phone && formik.errors.phone}
+                autoComplete="phone"
+                fullWidth
+              />
+
+              <div className="relative">
+                <TextField
+                  id="password"
+                  label="Password"
+                  type={passwordVisible ? "text" : "password"}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  name="password"
+                  error={formik.touched.password && Boolean(formik.errors.password)}
+                  helperText={formik.touched.password && formik.errors.password}
+                  autoComplete="new-password"
+                  fullWidth
+                />
+                <div 
+                  className="absolute right-3 top-4 cursor-pointer"
+                  onClick={() => setPasswordVisible(!passwordVisible)}
+                >
+                  {passwordVisible ? <EyeInvisibleFilled /> : <EyeFilled />}
                 </div>
+              </div>
+
+              <div className="relative">
+                <TextField
+                  id="confirmPassword"
+                  label="Confirm Password"
+                  type={confirmPasswordVisible ? "text" : "password"}
+                  value={formik.values.confirmPassword}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  name="confirmPassword"
+                  error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+                  helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+                  autoComplete="new-password"
+                  fullWidth
+                />
+                <div 
+                  className="absolute right-3 top-4 cursor-pointer"
+                  onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                >
+                  {confirmPasswordVisible ? <EyeInvisibleFilled /> : <EyeFilled />}
+                </div>
+              </div>
+
+              <div className="flex justify-center mt-6">
+                <button
+                  type="submit"
+                  className="bg-[#C84869] hover:bg-[#961638] text-white rounded-md transition-colors duration-300 p-3 w-[70%] disabled:opacity-50"
+                  disabled={loading}
+                >
+                  {loading ? 'Creating Account...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-5 text-center">
+              <div className="flex flex-row justify-center">
+                <p className="px-[10px]">Already have an account?</p>
+                <a href="/auth/login" className="text-[#C84869] hover:underline">Login</a>
               </div>
             </div>
           </div>
-          <div className="xs:hidden lg:block xl:block sm:hidden">
-            <Image className="h-full w-full" src={akshay} alt="load"/>
+          
+          <div className="xs:hidden lg:block xl:block sm:hidden w-[45%]">
+            <Image className="h-full w-full object-cover" src={akshay} alt="Registration illustration"/>
           </div>
         </div>
       </div>

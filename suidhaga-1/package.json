@@ -40,8 +40,6 @@
     "react-firebase-hooks": "^5.1.1",
     "react-hot-toast": "^2.4.1",
     "react-infinite-scroll-component": "^6.1.0",
-    "react-otp-input": "^3.1.1",
-    "react-phone-input-2": "^2.15.1",
     "socket.io-client": "^4.7.5",
     "styled-components": "^6.1.11",
     "tailwind-merge": "^2.3.0",

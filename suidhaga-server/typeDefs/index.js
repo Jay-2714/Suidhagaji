@@ -6,7 +6,7 @@ import transactionTypeDef from "./transaction.typeDef.js";
 import postTypeDef from "./post.typeDef.js";
 import jobTypeDefs from "./job.typedefs.js";
 // import bulkAddTypeDef from "./bulkadd.typeDef.js";
-import EmployeeTypeDef from "./employee.typeDef.js";
+import EmployeeTypeDef from "./employee.typedef.js";
 import OrderTypeDef from "./orders.typedefs.js";
 // import AttendanceTypeDef from "./Attendance.typeDef.js";
 
