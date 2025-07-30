@@ -44,7 +44,6 @@ store.on("error", (err) => console.log(err));
 
 app.use(
 	session({
-		secret: process.env.SESSION_SECRET,
 		resave: false, // this option specifies whether to save the session to the store on every request
 		saveUninitialized: false, // option specifies whether to save uninitialized sessions
 		cookie: {
